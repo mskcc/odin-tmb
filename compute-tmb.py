@@ -44,8 +44,16 @@ def main():
 
     maf_df = pd.read_csv(args.maf_file, sep='\t',comment='#',usecols=['Tumor_Sample_Barcode', 'Hugo_Symbol'])
 
-    filtered_maf_df=maf_df[maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes'])] #only filtering out genes that are not included in the panel
+
+    filtered_maf_df=maf_df[ (maf_df['Tumor_Sample_Barcode'] == args.tumorId)  &
+                            (maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes']))
+                            ] #only filtering out genes that are not included in the panel
     
+    print(filtered_maf_df)
+    
+
+
+
     number_of_mutataions=maf_df.shape[0]
     number_of_on_target_mutataions=filtered_maf_df.shape[0]
     number_of_discarded=number_of_mutataions-number_of_on_target_mutataions
@@ -59,12 +67,9 @@ def main():
 
     if args.output_filename is not None:
         output_message = \
-        'Total number of mutations for this sample: '+str(number_of_mutataions)+'\n'+ \
-        'Number of on-target mutations: '+str(number_of_on_target_mutataions)+'\n'+ \
-        'Number of off-target mutations: '+str(number_of_discarded)+'\n'+ \
-        'TMB values is calculated by Number of on-target mutations/Assay length*1,000,000\n'+ \
-        'TMB value: '+str(tmb_val)+'\n'
-        
+        'CMO_TMB_SCORE\tSampleID\n'+ \
+        str(tmb_val)+'\t'+args.tumorId+'\n'
+
         open(args.output_filename,'w').write(output_message)
 
 
