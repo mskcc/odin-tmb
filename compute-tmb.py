@@ -2,58 +2,74 @@
 import json
 import argparse
 import sys
-import pandas as pd
+
+try:
+    from pandas import read_csv as read_csv
+except:
+    sys.exit('Pandas is required')
 
 """
 Script to calculated tmb, intended to take analysis.maf
  usage:
      compute-tmb inputMaf outputFile tumorId assay normalType
 
-
+     Assay should be one of from assayDb file
+     normalType: Can be matched or unmatched. Unmatched will return NA as tmb value
+     matched to POOLEDNORMAL is considered unmatched
 """
 
-# def get_number_of_on_target_mutations(maf_file,tumorId,assayDb):
+def write_output(output_filename,tmb_score,sampleId):
+    output_message = \
+    'CMO_TMB_SCORE\tSampleID\n'+ \
+    str(tmb_score)+'\t'+sampleId+'\n'
 
-
+    open(output_filename,'w').write(output_message)
+    return
 
 
 def main():
     """
-    Script to calculate TMB tumor mutational burden value
+    Script to calculate TMB (tumor mutational burden) value
     """
-    parser = argparse.ArgumentParser(description='Script to calculate TMB tumor mutational burden value')
+    parser = argparse.ArgumentParser(description='Script to calculate TMB (tumor mutational burden) value')
     parser.add_argument("--maf_file",         required=True, dest = 'maf_file',         help="Input maf file")
     parser.add_argument("--output_filename",  required=False,dest = 'output_filename',  help="output_filename")
     parser.add_argument("--tumorId",          required=True, dest = 'tumorId',          help="tumorId")
-    parser.add_argument("--assay",            required=True, dest = 'assay',            help="assay should be one of these IMPACT341, IMPACT410, IMPACT468, IMPACT505")
-    # parser.add_argument("--normalType",       required=True, dest = 'normalType',       help="normalType")
-    parser.add_argument("--assayDb_file",       required=False, dest = 'assayDb_file', default = 'data/tmbAssayDb.json', help="assayDb_file")
+    parser.add_argument("--assay",            required=True, dest = 'assay',            help="Assay should be one of from assayDb file'")
+    parser.add_argument("--normalType",       required=True, dest = 'normalType',       help="normalType: matched/unmatched. Unmatched will return NA")
+    parser.add_argument("--assayDb_file",     required=False,dest = 'assayDb_file', default = 'data/tmbAssayDb.json', help="assayDb_file")
     
     args = parser.parse_args()
+
+    if args.normalType.lower() == 'unmatched':
+        write_output(args.output_filename,'NA',args.tumorId)
+        sys.exit(0)
+    elif args.normalType.lower() == 'matched':
+        print('Calculating TMB')
+    else:
+        print('normalType should be matched or unmatched')
+        sys.exit('normalType should be matched or unmatched')
 
     try:
         with open(args.assayDb_file, 'r') as f:
             assayDb = json.load(f)
     except:
         print('Error: This assayDb_file file can not be found:',args.assayDb_file)
-        sys.exit(1)
+        sys.exit('Error: This assayDb_file file can not be found: '+args.assayDb_file)
 
     if not args.assay in assayDb:
-        print('Assay should be one of these: IMPACT341, IMPACT410, IMPACT468, IMPACT505')
-        sys.exit(1)
+        print('Assay should be one of from assayDb file')
+        sys.exit('Assay should be one of from assayDb file')
 
-    maf_df = pd.read_csv(args.maf_file, sep='\t',comment='#',usecols=['Tumor_Sample_Barcode', 'Hugo_Symbol'])
+    maf_df = read_csv(args.maf_file, sep='\t',comment='#',usecols=['Tumor_Sample_Barcode', 'Hugo_Symbol'])
 
+    if args.tumorId not in maf_df['Tumor_Sample_Barcode'].values:
+        sys.exit('Tumor Id could not be found in the maf file')
 
     filtered_maf_df=maf_df[ (maf_df['Tumor_Sample_Barcode'] == args.tumorId)  &
                             (maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes']))
-                            ] #only filtering out genes that are not included in the panel
+                            ] #only filtering out genes that are not included in the assay panel
     
-    print(filtered_maf_df)
-    
-
-
-
     number_of_mutataions=maf_df.shape[0]
     number_of_on_target_mutataions=filtered_maf_df.shape[0]
     number_of_discarded=number_of_mutataions-number_of_on_target_mutataions
@@ -66,12 +82,7 @@ def main():
     print('TMB value:',tmb_val)
 
     if args.output_filename is not None:
-        output_message = \
-        'CMO_TMB_SCORE\tSampleID\n'+ \
-        str(tmb_val)+'\t'+args.tumorId+'\n'
-
-        open(args.output_filename,'w').write(output_message)
-
+        write_output(args.output_filename,tmb_val,args.tumorId)
 
 if __name__ == '__main__':
     main()
