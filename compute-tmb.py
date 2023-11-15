@@ -4,7 +4,8 @@ import argparse
 import sys
 
 try:
-    from pandas import read_csv as read_csv
+    # from pandas import read_csv as read_csv
+    import pandas as pd
 except:
     sys.exit('Pandas is required')
 
@@ -58,13 +59,20 @@ def main():
         sys.exit('Error: This assayDb_file file can not be found: '+args.assayDb_file)
 
     if not args.assay in assayDb:
-        print('Assay should be one of from assayDb file')
-        sys.exit('Assay should be one of from assayDb file')
+        write_output(args.output_filename,'NA',args.tumorId)
+        sys.exit(0)
 
-    maf_df = read_csv(args.maf_file, sep='\t',comment='#',usecols=['Tumor_Sample_Barcode', 'Hugo_Symbol'])
+    maf_df = pd.read_csv(args.maf_file, sep='\t',comment='#',usecols=['Tumor_Sample_Barcode', 'Hugo_Symbol'])
 
-    if args.tumorId not in maf_df['Tumor_Sample_Barcode'].values:
-        sys.exit('Tumor Id could not be found in the maf file')
+    if args.tumorId == 'ALL':
+        print('All samples mode')
+        mutations_counts=maf_df[ (maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes']))]['Tumor_Sample_Barcode'].value_counts()
+        result_df=pd.DataFrame({'CMO_TMB_SCORE': mutations_counts.values/assayDb[args.assay]['genomicSize']*1000000,
+                                'SampleID':mutations_counts.index})
+
+        result_df.round(2).to_csv(args.output_filename, index=False, sep='\t')
+        print('Done')
+        sys.exit(0)
 
     filtered_maf_df=maf_df[ (maf_df['Tumor_Sample_Barcode'] == args.tumorId)  &
                             (maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes']))
