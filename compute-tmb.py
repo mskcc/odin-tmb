@@ -21,7 +21,7 @@ Script to calculated tmb, intended to take analysis.maf
 
 def write_output(output_filename,tmb_score,sampleId):
     output_message = \
-    'CMO_TMB_SCORE\tSampleID\n'+ \
+    'CMO_TMB_SCORE\SAMPLE_ID\n'+ \
     str(tmb_score)+'\t'+sampleId+'\n'
 
     open(output_filename,'w').write(output_message)
@@ -65,10 +65,11 @@ def main():
     maf_df = pd.read_csv(args.maf_file, sep='\t',comment='#',usecols=['Tumor_Sample_Barcode', 'Hugo_Symbol'])
 
     if args.tumorId == 'ALL':
+        #Note that if a sample in the project had no mutations, running it self will give 0 tmb value but it won't be included in ALL mode
         print('All samples mode')
         mutations_counts=maf_df[ (maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes']))]['Tumor_Sample_Barcode'].value_counts()
         result_df=pd.DataFrame({'CMO_TMB_SCORE': mutations_counts.values/assayDb[args.assay]['genomicSize']*1000000,
-                                'SampleID':mutations_counts.index})
+                                'SAMPLE_ID':mutations_counts.index})
 
         result_df.round(2).to_csv(args.output_filename, index=False, sep='\t')
         print('Done')
