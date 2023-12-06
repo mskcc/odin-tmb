@@ -2,3 +2,5 @@
 ._*
 *.maf
 venv/
+trash/
+test/

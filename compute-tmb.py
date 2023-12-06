@@ -20,10 +20,7 @@ Script to calculated tmb, intended to take analysis.maf
 """
 
 def write_output(output_filename,tmb_score,sampleId):
-    output_message = \
-    'CMO_TMB_SCORE\SAMPLE_ID\n'+ \
-    str(tmb_score)+'\t'+sampleId+'\n'
-
+    output_message = 'CMO_TMB_SCORE\tSAMPLE_ID\n'+ str(tmb_score)+'\t'+sampleId+'\n'
     open(output_filename,'w').write(output_message)
     return
 
