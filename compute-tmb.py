@@ -61,16 +61,17 @@ def main():
 
     maf_df = pd.read_csv(args.maf_file, sep='\t',comment='#',usecols=['Tumor_Sample_Barcode', 'Hugo_Symbol'])
 
-    if args.tumorId == 'ALL':
-        #Note that if a sample in the project had no mutations, running it self will give 0 tmb value but it won't be included in ALL mode
-        print('All samples mode')
-        mutations_counts=maf_df[ (maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes']))]['Tumor_Sample_Barcode'].value_counts()
-        result_df=pd.DataFrame({'CMO_TMB_SCORE': mutations_counts.values/assayDb[args.assay]['genomicSize']*1000000,
-                                'SAMPLE_ID':mutations_counts.index})
+    # we get matched and unmatched mixed project, below requires additional input file, may turn on later
+    # if args.tumorId == 'ALL':
+    #     #Note that if a sample in the project had no mutations, running it self will give 0 tmb value but it won't be included in ALL mode
+    #     print('All samples mode')
+    #     mutations_counts=maf_df[ (maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes']))]['Tumor_Sample_Barcode'].value_counts()
+    #     result_df=pd.DataFrame({'CMO_TMB_SCORE': mutations_counts.values/assayDb[args.assay]['genomicSize']*1000000,
+    #                             'SAMPLE_ID':mutations_counts.index})
 
-        result_df.round(2).to_csv(args.output_filename, index=False, sep='\t')
-        print('Done')
-        sys.exit(0)
+    #     result_df.round(2).to_csv(args.output_filename, index=False, sep='\t')
+    #     print('Done')
+    #     sys.exit(0)
 
     filtered_maf_df=maf_df[ (maf_df['Tumor_Sample_Barcode'] == args.tumorId)  &
                             (maf_df['Hugo_Symbol'].isin(assayDb[args.assay]['genes']))
