@@ -1,2 +1,6 @@
 *.pyc
 ._*
+*.maf
+venv/
+trash/
+test/
